@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Order Confirmed</title>
+  <style>
+    body {
+      background-color: #d4edda;
+      color: #155724;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-align: center;
+      padding: 50px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    h1 {
+      font-size: 3em;
+      margin-bottom: 20px;
+    }
+
+    p {
+      font-size: 1.5em;
+    }
+
+    .flower {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      background-image: url('http://localhost:5000/images/images.jpg'); 
+      background-size: contain;
+      background-repeat: no-repeat;
+      animation: float 10s infinite linear;
+    }
+
+    @keyframes float {
+      0% {
+        transform: translateY(100vh) rotate(0deg);
+        opacity: 0;
+      }
+      20% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-20vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
+
+    #goBackBtn {
+      margin-top: 40px;
+      padding: 12px 24px;
+      font-size: 16px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      display: none;
+    }
+
+    #goBackBtn:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎉 Order Confirmed!</h1>
+  <p>Your order has been successfully placed.</p>
+
+  <!-- Animated flowers -->
+  <div class="flower" style="left: 10%; animation-delay: 0s;"></div>
+  <div class="flower" style="left: 30%; animation-delay: 2s;"></div>
+  <div class="flower" style="left: 50%; animation-delay: 4s;"></div>
+  <div class="flower" style="left: 70%; animation-delay: 1s;"></div>
+  <div class="flower" style="left: 90%; animation-delay: 3s;"></div>
+
+  <!-- Go Back Button -->
+  <button id="goBackBtn" onclick="goBack()">Go Back</button>
+
+  <script>
+    // Show the button after 6 seconds
+    setTimeout(() => {
+      document.getElementById("goBackBtn").style.display = "inline-block";
+    }, 6000);
+
+    // Redirect function
+    function goBack() {
+      window.location.href = "ind.html";
+    }
+  </script>
+</body>
+</html>

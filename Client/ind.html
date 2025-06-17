@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select a State</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 50px auto; padding: 20px; background-color: white; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); text-align: center; }
+        h1 { text-align: center; }
+        .state-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 20px; }
+        .state-button { padding: 10px 15px; font-size: 16px; border: none; background-color: #4CAF50; color: white; cursor: pointer; border-radius: 5px; }
+        .state-button:hover { background-color: #45a049; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Select a State</h1>
+    <div class="state-list" id="state-list"></div>
+</div>
+
+<script>
+    async function fetchStates() {
+        const stateList = document.getElementById('state-list');
+        try {
+            const response = await fetch('http://localhost:5000/api/states');
+            if (!response.ok) throw new Error("Failed to fetch states");
+            const states = await response.json();
+
+            stateList.innerHTML = states.map(state => 
+                `<button class="state-button" onclick="redirectToState('${state.name}')">${state.name}</button>`
+            ).join('');
+        } catch (error) {
+            console.error("Error loading states:", error);
+            stateList.innerHTML = '<p>Error loading states</p>';
+        }
+    }
+
+    function redirectToState(stateName) {
+        window.location.href = `state.html?state=${encodeURIComponent(stateName)}`;
+    }
+
+    window.onload = fetchStates;
+</script>
+
+</body>
+</html>

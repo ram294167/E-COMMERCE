@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirm Order</title>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 50px auto; padding: 20px; background-color: white; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); }
+    h1 { text-align: center; }
+    .saved-addresses { margin-top: 20px; }
+    .address-card { padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px; background: #fff; display: flex; align-items: center; }
+    .address-card input { margin-right: 10px; }
+    .add-address { text-align: center; margin-top: 20px; }
+    .add-address button, .confirm-order { background-color: #2196F3; color: white; padding: 10px 20px; border-radius: 5px; border: none; cursor: pointer; width: 100%; margin-top: 10px; }
+    .add-address button:hover, .confirm-order:hover { background-color: #1976D2; }
+    .address-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+    .form-group { margin-bottom: 10px; }
+    .form-group label { display: block; font-weight: bold; }
+    .form-group input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; }
+    .address-popup button { width: 100%; margin-top: 10px; }
+    /* Payment Details Section Style */
+    .payment-details { margin-top: 20px; padding: 15px; background: #e0f7fa; border: 1px solid #81d4fa; border-radius: 5px; text-align: center; font-size: 16px; font-weight: bold; }
+    .payment-details .form-group { text-align: left; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Confirm Order</h1>
+
+  <h3>Saved Addresses</h3>
+  <div class="saved-addresses" id="saved-addresses">
+    <p>No saved addresses found.</p>
+  </div>
+
+  <div class="add-address">
+    <button onclick="showAddressPopup()">Add Address</button>
+  </div>
+
+  <div class="address-popup" id="address-popup">
+    <h2>Add Address</h2>
+    <div class="form-group">
+      <label>Name</label>
+      <input type="text" id="name" placeholder="Enter your name">
+    </div>
+    <div class="form-group">
+      <label>Phone</label>
+      <input type="text" id="phone" placeholder="Enter phone number">
+    </div>
+    <div class="form-group">
+      <label>Address</label>
+      <input type="text" id="address" placeholder="Enter your address">
+    </div>
+    <button onclick="addAddress()">Save Address</button>
+    <button onclick="closeAddressPopup()">Cancel</button>
+  </div>
+
+  <!-- Payment Details Section -->
+  <div class="payment-details">
+    <p><strong>UPI ID:</strong> abc@upi</p>
+    <p><strong>UPI Name:</strong> YourShopName</p>
+    <div class="form-group">
+      <label for="transactionId">UPI Transaction ID:</label>
+      <input type="text" id="transactionId" placeholder="Enter UPI Transaction ID">
+    </div>
+    <div class="form-group">
+      <!-- Notice the added name attribute here -->
+      <label for="paymentProof">Upload Payment Proof (Screenshot):</label>
+      <input type="file" id="paymentProof" name="paymentProof" accept="image/*">
+    </div>
+  </div>
+
+  <button class="confirm-order" onclick="confirmOrder()">Confirm Order</button>
+</div>
+
+<script>
+  // Show/Hide address popup
+  function showAddressPopup() {
+    document.getElementById('address-popup').style.display = 'block';
+  }
+  function closeAddressPopup() {
+    document.getElementById('address-popup').style.display = 'none';
+  }
+
+  // Add new address and save in localStorage
+  function addAddress() {
+    const name = document.getElementById('name').value;
+    const phone = document.getElementById('phone').value;
+    const address = document.getElementById('address').value;
+    if (!name || !phone || !address) {
+      alert("Please fill all fields");
+      return;
+    }
+    let addresses = JSON.parse(localStorage.getItem('addresses')) || [];
+    addresses.push({ name, phone, address });
+    localStorage.setItem('addresses', JSON.stringify(addresses));
+    displayAddresses();
+    closeAddressPopup();
+  }
+
+  // Display saved addresses with radio buttons for selection
+  function displayAddresses() {
+    let addresses = JSON.parse(localStorage.getItem('addresses')) || [];
+    let addressContainer = document.getElementById('saved-addresses');
+    if (addresses.length === 0) {
+      addressContainer.innerHTML = "<p>No saved addresses found.</p>";
+    } else {
+      addressContainer.innerHTML = addresses.map((addr, index) => `
+        <label class="address-card">
+          <input type="radio" name="selectedAddress" value="${index}">
+          ${addr.name} - ${addr.phone}, ${addr.address}
+        </label>
+      `).join('');
+    }
+  }
+
+  // Confirm Order: collect payment details, order details, and send them to backend
+  
+function confirmOrder() {
+  console.log("Confirm Order called");
+
+  let userId = localStorage.getItem("userId");
+  console.log("User ID:", userId);
+  if (!userId) {
+    alert("User is not logged in!");
+    return;
+  }
+
+  let selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
+  if (!selectedAddress) {
+    alert("Please select an address before confirming your order.");
+    return;
+  }
+
+  let addresses = JSON.parse(localStorage.getItem('addresses'));
+  let chosenAddress = addresses[selectedAddress.value];
+  console.log("Selected Address:", chosenAddress);
+
+  let cartItems = JSON.parse(localStorage.getItem('cart')) || [];
+  console.log("Cart Items:", cartItems);
+  if (cartItems.length === 0) {
+    alert("Your cart is empty!");
+    return;
+  }
+
+  let totalPrice = cartItems.reduce((sum, item) => sum + (item.cost * item.quantity), 0);
+  console.log("Total Price:", totalPrice);
+
+  let transactionId = document.getElementById('transactionId').value;
+  if (!transactionId) {
+    alert("Please enter your UPI Transaction ID.");
+    return;
+  }
+
+  const paymentProofInput = document.getElementById('paymentProof');
+  if (paymentProofInput.files.length === 0) {
+    alert("Please upload your payment proof screenshot.");
+    return;
+  }
+
+  const paymentProofFile = paymentProofInput.files[0];
+  console.log("Payment Proof File:", paymentProofFile);
+
+  let formData = new FormData();
+  formData.append("userId", userId);
+  formData.append('address', JSON.stringify(chosenAddress));
+  formData.append('items', JSON.stringify(cartItems));
+  formData.append('totalPrice', totalPrice);
+  formData.append('transactionId', transactionId);
+  formData.append('paymentProof', paymentProofFile);
+
+  console.log("Sending request...");
+ 
+fetch('http://localhost:5000/api/orders', {
+  method: 'POST',
+  body: formData
+})
+.then(response => {
+  if (!response.ok) {
+    throw new Error("Network response was not ok");
+  }
+  return response.json(); // ✅ parse JSON properly
+})
+.then(data => {
+  console.log("Received from server:", data);
+
+  if (!data || !data.orderId) {
+    console.warn("No orderId found in response");
+    alert("Order placed, but no order ID received.");
+    return;
+  }
+  localStorage.removeItem('cart');
+  console.log("Redirecting to ordersuccess.html...");
+  window.location.href = "ordersuccess.html";
+})
+.catch(error => {
+  console.error("Error placing order:", error);
+  alert("Failed to place order. Please try again.");
+});
+
+
+}
+  
+
+  window.onload = displayAddresses;
+</script>
+
+</body>
+</html>

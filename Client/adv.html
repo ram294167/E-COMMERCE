@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login & Register</title>
+    <style>
+        .main-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+        .login-icon {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            cursor: pointer;
+            font-size: 24px;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+    .advertisement {
+     height:100%;
+    display: flex;
+    overflow-x: scroll;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    padding: 10px 20px;
+    gap: 20px;
+    width: 100%;
+    background-color: #f5f5f5;
+    box-sizing: border-box;
+}
+        .container {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 2px 2px 10px #ddd;
+        }
+
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+        }
+    .horizontal-scroll {
+    display: flex;
+    height: 50vh;
+    overflow-x: auto;
+    white-space: nowrap;
+    gap: 10px;
+    padding: 10px;
+    scroll-behavior: smooth;
+    box-sizing: border-box;
+    margin: 20px;
+            }
+
+.ad-item img {
+
+    height: 100%;
+    width: 100%;
+    object-fit:contain; /* Show full image without cutting */
+    display: block;
+}
+
+.recent-items {
+    padding: 20px 20px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+ /* Responsive 3 per row */
+    gap: 25px;
+    overflow-y: auto;
+    height: 100%; 
+
+}
+
+.item img {
+  width: 100%;
+  height:100%;
+    border-radius: 8px;
+    border: 2px solid #ccc;}
+
+
+
+.ad-item {
+    flex: 0 0 47%; /* Slightly less than 50% to account for gap */
+    margin-right: 2%;
+    border: 3px solid #333;
+    border-radius: 10px;
+    align-items: center;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    scroll-snap-align: start;
+    justify-content: center;
+
+}
+
+.ad-item.active {
+    opacity: 1;
+    position: relative;
+}
+
+.horizontal-scroll::-webkit-scrollbar {
+    display: none; /* Hide scrollbar */
+}
+.advertisement::-webkit-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+
+
+   
+
+    </style>
+</head>
+<body>
+
+    <!-- Login Icon -->
+<div class="login-icon" onclick="toggleLogin()">🔑</div>
+<!-- Advertisement Scrolling -->
+<div class="main-container">
+    <!-- Left Half: Horizontal Advertisement -->
+    <div id="advertisement" class="horizontal-scroll"></div>
+
+    <!-- Right Half: Recent Items -->
+    <div id="itemsContainer" class="recent-items"></div>
+</div>
+
+
+<!-- Login & Register Form -->
+<div class="container" id="loginContainer">
+    <form id="loginForm" onsubmit="login(event)">
+        <h2>Login</h2>
+        <input type="text" id="loginEmailPhone" placeholder="Email or Phone" required>
+        <input type="password" id="loginPassword" placeholder="Password" required>
+        <button type="submit">Login</button>
+        <p>Don't have an account? <a href="#" onclick="toggleForm()">Register</a></p>
+    </form>
+
+    <form id="registerForm" style="display: none;" onsubmit="register(event)">
+        <h2>Register</h2>
+        <input type="text" id="registerName" placeholder="Full Name" required>
+        <input type="text" id="registerEmail" placeholder="Email" required>
+        <input type="text" id="registerPhone" placeholder="Phone" required>
+        <input type="password" id="registerPassword" placeholder="Password" required>
+        <button type="submit">Register</button>
+        <p>Already have an account? <a href="#" onclick="toggleForm()">Login</a></p>
+    </form>
+</div>
+
+    <script>
+
+function toggleLogin() {
+    const loginBox = document.getElementById('loginContainer');
+    loginBox.style.display = (loginBox.style.display === 'none' || loginBox.style.display === '') ? 'block' : 'none';
+}
+        function toggleForm() {
+            document.getElementById('loginForm').style.display = 
+                document.getElementById('loginForm').style.display === 'none' ? 'block' : 'none';
+            document.getElementById('registerForm').style.display = 
+                document.getElementById('registerForm').style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function login(event) {
+    event.preventDefault(); // Prevent form from reloading
+
+    // ✅ Get correct input fields
+    const emailOrPhone = document.getElementById("loginEmailPhone").value.trim();
+    const password = document.getElementById("loginPassword").value.trim();
+
+    if (!emailOrPhone || !password) {
+        alert("Please enter both email/phone and password!");
+        return;
+    }
+
+    try {
+        const response = await fetch("http://localhost:5000/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ emailOrPhone, password })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+             localStorage.setItem("userId", data.userId);
+            alert("✅ Login successful!");
+            window.location.href = "ind.html"; // ✅ Redirect on success
+        } else {
+            alert(data.message || "❌ Invalid credentials!");
+        }
+    } catch (error) {
+        console.error("❌ Login failed:", error);
+        alert("Login failed. Please try again.");
+    }
+}
+
+
+    async function register(event) {
+    event.preventDefault();
+
+    // Get input values
+    const name = document.getElementById("registerName").value.trim();
+    const email = document.getElementById("registerEmail").value.trim();
+    const phone = document.getElementById("registerPhone").value.trim();
+    const password = document.getElementById("registerPassword").value.trim();
+
+    if (!name || !email || !phone || !password) {
+        alert("All fields are required!");
+        return;
+    }
+
+    try {
+        // Send request to backend
+        const response = await fetch('http://localhost:5000/api/register', { // Ensure correct URL
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, email, phone, password })
+        });
+
+        const data = await response.json();
+        alert(data.message);
+
+        if (data.success) {
+            document.getElementById("registerForm").reset(); // Clear form on success
+        }
+    } catch (error) {
+        console.error("Registration failed:", error);
+        alert("Registration failed. Please try again.");
+    }
+}
+
+async function fetchData() {
+    try {
+        // Fetch advertisements (for horizontal scrolling)
+        const adResponse = await fetch("http://localhost:5000/api/recent-products");
+        const ads = await adResponse.json();
+
+        // Fetch recent products (for displaying below)
+        const recentResponse = await fetch("http://localhost:5000/api/recent");
+        const recentProducts = await recentResponse.json();
+
+        const adContainer = document.getElementById("advertisement");
+        const itemsContainer = document.getElementById("itemsContainer");
+
+        // ✅ Display advertisements in a scrolling section
+        ads.forEach((ad) => {
+            let adDiv = document.createElement("div");
+            adDiv.classList.add("ad-item");
+            adDiv.innerHTML = `<img src="${ad.image}" alt="${ad.name}" title="${ad.name}">`;
+            adContainer.appendChild(adDiv);
+        });
+
+    
+recentProducts.slice(0, 8).forEach((item) => {
+    let itemDiv = document.createElement("div");
+    itemDiv.classList.add("item");
+    itemDiv.innerHTML = `<img src="${item.image}">`;
+    itemsContainer.appendChild(itemDiv);
+});
+
+
+    } catch (error) {
+        console.error("❌ Error fetching data:", error);
+    }
+}
+
+// Call function on page load
+fetchData();
+let adIndex = 0;
+
+function scrollAds() {
+    const adContainer = document.getElementById("advertisement");
+    const adItems = Array.from(adContainer.children);
+    if (adItems.length <= 2) return;
+
+    const itemWidth = adItems[0].offsetWidth + 30; // includes gap
+    adIndex = (adIndex + 2) % adItems.length;
+
+    adContainer.scrollTo({
+        left: adIndex * itemWidth,
+        behavior: "smooth"
+    });
+}
+
+setInterval(scrollAds, 3000);
+
+// Call it once on page load to show the first ad immediately
+window.onload = () => {
+    scrollAds();
+};   
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f9f9f9; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        h1 { text-align: center; }
+        .cart-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #ddd ; flex-wrap: wrap; }
+        .cart-item img { width: 50px; height: 50px; object-fit: cover; border-radius: 5px; margin-right: 10px; }
+        .cart-item-info { flex: 1 1 100%; display: flex; align-items: center; margin-bottom: 10px; }
+        .quantity-controls { display: flex; align-items: center; }
+        .quantity-controls button { background: #007bff; color: white; border: none; padding: 5px 10px; margin: 0 5px; cursor: pointer; }
+        .quantity-controls button:hover { background: #0056b3; }
+        .remove-btn { background: red; color: white; border: none; padding: 5px; cursor: pointer; }
+        .remove-btn:hover { background: darkred; }
+        .total { text-align: right; font-size: 20px; font-weight: bold; margin-top: 10px; }
+        .clear-btn, .confirm-btn { width: 100%; padding: 10px; border: none; cursor: pointer; margin-top: 10px; font-size: 16px; }
+        .clear-btn { background: red; color: white; }
+        .clear-btn:hover { background: darkred; }
+        .confirm-btn { background: green; color: white; }
+        .confirm-btn:hover { background: darkgreen; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Your Cart</h1>
+        <div id="cart-container"></div>
+        <p class="total">Total: ₹<span id="total-cost">0</span></p>
+        <button class="clear-btn" onclick="clearCart()">Clear Cart</button>
+        <button class="confirm-btn" onclick="confirmOrder()">Confirm Order</button>
+    </div>
+
+    <script>
+        function loadCart() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const cartContainer = document.getElementById("cart-container");
+            const totalCostElement = document.getElementById("total-cost");
+
+            if (cart.length === 0) {
+                cartContainer.innerHTML = "<p>Your cart is empty.</p>";
+                totalCostElement.textContent = "0";
+                return;
+            }
+
+            let totalCost = 0;
+            cartContainer.innerHTML = cart.map(item => {
+                totalCost += parseFloat(item.cost) * item.quantity;
+                return `
+                    <div class="cart-item">
+                        <div class="cart-item-info">
+                            <img src="${item.image}" alt="${item.name}" onerror="this.onerror=null; this.src='https://via.placeholder.com/50';">
+                            <span>${item.name} - ₹${item.cost} (x${item.quantity})</span>
+                        </div>
+                        <div class="quantity-controls">
+                            <button onclick="updateQuantity('${item.id}', -1)">-</button>
+                            <span>${item.quantity}</span>
+                            <button onclick="updateQuantity('${item.id}', 1)">+</button>
+                        </div>
+                        <button class="remove-btn" onclick="removeItem('${item.id}')">Remove</button>
+                    </div>
+                `;
+            }).join("");
+
+            totalCostElement.textContent = totalCost;
+        }
+
+        function updateQuantity(itemId, change) {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            cart = cart.map(item => {
+                if (item.id === itemId) {
+                    item.quantity = Math.max(1, item.quantity + change); // Ensure quantity is at least 1
+                }
+                return item;
+            });
+            localStorage.setItem('cart', JSON.stringify(cart));
+            loadCart();
+        }
+
+        function removeItem(itemId) {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            cart = cart.filter(item => item.id !== itemId);
+            localStorage.setItem('cart', JSON.stringify(cart));
+            loadCart();
+        }
+
+        function clearCart() {
+            localStorage.removeItem("cart");
+            loadCart();
+        }
+
+        function confirmOrder() {
+            window.location.href = "address.html";
+        }
+       
+
+        window.onload = loadCart;
+    </script>
+
+</body>
+</html>
