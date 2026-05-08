@@ -59,31 +59,43 @@ if (!userId) {
     // Insert order into `orders` table
     const orderQuery = `
       INSERT INTO orders (user_id, address, transaction_id, payment_proof_url, total_amount)
-      VALUES (?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?) RETURNING id
     `;
 
-    const [orderResult] = await db.promise().query(orderQuery, [
+    db.query(orderQuery, [
       userId, JSON.stringify(addressObj), transactionId, paymentProofUrl, totalPrice
-    ]);
+    ], (err, orderResult) => {
+      if (err) {
+        console.error('❌ Error inserting order:', err);
+        return res.status(500).json({ error: 'Server error while creating order.' });
+      }
 
-    const orderId = orderResult.insertId;
+      const orderId = orderResult[0].id;
 
-    // Prepare order items data
-    const orderItemsValues = itemsArray.map(item => [
-      orderId, item.id, item.quantity, item.cost
-    ]);
+      // Prepare order items data
+      const orderItemsValues = itemsArray.flatMap(item => [
+        orderId, item.id, item.quantity, item.cost
+      ]);
 
-    // **Log Order Items Before Inserting**
-    console.log('Order Items Before Insertion:', orderItemsValues);
+      // **Log Order Items Before Inserting**
+      console.log('Order Items Before Insertion:', orderItemsValues);
 
-    // Insert order items into `order_items` table
-    const itemsQuery = `
-      INSERT INTO order_items (order_id, item_id, quantity, price)
-      VALUES ?
-    `;
-    await db.promise().query(itemsQuery, [orderItemsValues]);
-   console.log("Final Order ID to return:", orderId);
-   res.json({ orderId: orderId, message: 'Order placed successfully!' });
+      // Insert order items into `order_items` table
+      const itemsQuery = `
+        INSERT INTO order_items (order_id, item_id, quantity, price)
+        VALUES ${itemsArray.map(() => '(?, ?, ?, ?)').join(', ')}
+      `;
+
+      db.query(itemsQuery, orderItemsValues, (err) => {
+        if (err) {
+          console.error('❌ Error inserting order items:', err);
+          return res.status(500).json({ error: 'Server error while inserting order items.' });
+        }
+
+        console.log('Final Order ID to return:', orderId);
+        res.json({ orderId: orderId, message: 'Order placed successfully!' });
+      });
+    });
 
   } catch (error) {
     console.error(error);
