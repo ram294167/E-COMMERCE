@@ -48,10 +48,11 @@ app.get('/', (req, res) => {
 app.get('/api/categories', (req, res) => {
     connection.query("SELECT id, name, description, image, icon FROM categories ORDER BY id", (err, results) => {
         if (err) {
-            console.error("❌ Error fetching categories:", err);
-            return res.status(500).json({ error: "Database error" });
+            console.error("❌ Error fetching categories:", err.message);
+            // Return empty array if categories table doesn't exist yet
+            return res.json([]);
         }
-        res.json(results);
+        res.json(results || []);
     });
 });
 
@@ -66,10 +67,10 @@ app.get('/api/categories/:categoryId/products', (req, res) => {
     `;
     connection.query(sql, [req.params.categoryId], (err, results) => {
         if (err) {
-            console.error("❌ Error fetching category products:", err);
-            return res.status(500).json({ error: "Database error" });
+            console.error("❌ Error fetching category products:", err.message);
+            return res.status(500).json({ error: "Category not found" });
         }
-        res.json(results);
+        res.json(results || []);
     });
 });
 
@@ -90,10 +91,10 @@ app.get('/api/search', (req, res) => {
     `;
     connection.query(sql, [searchTerm, searchTerm], (err, results) => {
         if (err) {
-            console.error("❌ Error searching products:", err);
-            return res.status(500).json({ error: "Database error" });
+            console.error("❌ Error searching products:", err.message);
+            return res.status(500).json({ error: "Search failed" });
         }
-        res.json(results);
+        res.json(results || []);
     });
 });
 
@@ -112,10 +113,18 @@ app.get('/api/items', (req, res) => {
     `;
     connection.query(sql, [limit, offset], (err, results) => {
         if (err) {
-            console.error("❌ Error fetching items:", err);
-            return res.status(500).json({ error: "Database error" });
+            console.error("❌ Error fetching items:", err.message);
+            // Fallback to basic query if new columns don't exist
+            const fallbackSql = "SELECT id, name, description, cost, image FROM items LIMIT 20";
+            connection.query(fallbackSql, (fallbackErr, fallbackResults) => {
+                if (fallbackErr) {
+                    return res.status(500).json({ error: "Database error" });
+                }
+                res.json(fallbackResults || []);
+            });
+            return;
         }
-        res.json(results);
+        res.json(results || []);
     });
 });
 
@@ -129,8 +138,16 @@ app.get('/api/items/:id', (req, res) => {
     `;
     connection.query(sql, [req.params.id], (err, results) => {
         if (err) {
-            console.error("❌ Error fetching item:", err);
-            return res.status(500).json({ error: "Database error" });
+            console.error("❌ Error fetching item:", err.message);
+            // Fallback to simple query
+            const fallbackSql = "SELECT * FROM items WHERE id = ?";
+            connection.query(fallbackSql, [req.params.id], (fallbackErr, fallbackResults) => {
+                if (fallbackErr || fallbackResults.length === 0) {
+                    return res.status(404).json({ error: "Product not found" });
+                }
+                res.json(fallbackResults[0]);
+            });
+            return;
         }
         if (results.length === 0) {
             return res.status(404).json({ error: "Product not found" });
@@ -150,10 +167,18 @@ app.get("/api/trending-products", (req, res) => {
     `;
     connection.query(sql, (err, results) => {
         if (err) {
-            console.error("❌ Error fetching trending products:", err);
-            return res.status(500).json({ success: false, message: "Error fetching trending products", error: err });
+            console.error("❌ Error fetching trending products:", err.message);
+            // Return top products by ID if new columns don't exist
+            const fallbackSql = "SELECT id, name, cost, image FROM items ORDER BY id DESC LIMIT 12";
+            connection.query(fallbackSql, (fallbackErr, fallbackResults) => {
+                if (fallbackErr) {
+                    return res.json([]);
+                }
+                res.json(fallbackResults || []);
+            });
+            return;
         }
-        res.json(results);
+        res.json(results || []);
     });
 });
 
@@ -168,10 +193,18 @@ app.get("/api/sale-products", (req, res) => {
     `;
     connection.query(sql, (err, results) => {
         if (err) {
-            console.error("❌ Error fetching sale products:", err);
-            return res.status(500).json({ success: false, message: "Error fetching sale products" });
+            console.error("❌ Error fetching sale products:", err.message);
+            // Return products if new columns don't exist
+            const fallbackSql = "SELECT id, name, cost, image FROM items LIMIT 15";
+            connection.query(fallbackSql, (fallbackErr, fallbackResults) => {
+                if (fallbackErr) {
+                    return res.json([]);
+                }
+                res.json(fallbackResults || []);
+            });
+            return;
         }
-        res.json(results);
+        res.json(results || []);
     });
 });
 
