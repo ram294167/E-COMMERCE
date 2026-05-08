@@ -24,7 +24,7 @@
     async function fetchStates() {
         const stateList = document.getElementById('state-list');
         try {
-            const response = await fetch('http://localhost:5000/api/states');
+            const response = await fetch('${import.meta.env.VITE_API_URL}/api/states');
             if (!response.ok) throw new Error("Failed to fetch states");
             const states = await response.json();
 

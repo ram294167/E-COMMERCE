@@ -184,7 +184,7 @@ function toggleLogin() {
     }
 
     try {
-        const response = await fetch("http://localhost:5000/api/login", {
+        const response = await fetch("${import.meta.env.VITE_API_URL}/api/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ emailOrPhone, password })
@@ -222,7 +222,7 @@ function toggleLogin() {
 
     try {
         // Send request to backend
-        const response = await fetch('http://localhost:5000/api/register', { // Ensure correct URL
+        const response = await fetch('${import.meta.env.VITE_API_URL}/api/register', { // Ensure correct URL
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name, email, phone, password })
@@ -243,11 +243,11 @@ function toggleLogin() {
 async function fetchData() {
     try {
         // Fetch advertisements (for horizontal scrolling)
-        const adResponse = await fetch("http://localhost:5000/api/recent-products");
+        const adResponse = await fetch("${import.meta.env.VITE_API_URL}/api/recent-products");
         const ads = await adResponse.json();
 
         // Fetch recent products (for displaying below)
-        const recentResponse = await fetch("http://localhost:5000/api/recent");
+        const recentResponse = await fetch("${import.meta.env.VITE_API_URL}/api/recent");
         const recentProducts = await recentResponse.json();
 
         const adContainer = document.getElementById("advertisement");

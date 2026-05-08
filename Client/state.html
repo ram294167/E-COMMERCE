@@ -110,7 +110,7 @@
             dataContainer.innerHTML = '<p class="loading">Loading items...</p>';
 
             try {
-                const response = await fetch(`http://localhost:5000/api/items?state=${state}`);
+                const response = await fetch(`${import.meta.env.VITE_API_URL}/api/items?state=${state}`);
                 if (!response.ok) throw new Error("Failed to fetch items");
                 
                 const items = await response.json();
