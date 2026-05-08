@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-  origin: "*",
+  origin: ["https://e-commerce-zvc2-efwpjpcfb-ram2941675-projects.vercel.app", "http://localhost:3000", "http://localhost:5173"],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
@@ -44,44 +44,73 @@ app.get('/', (req, res) => {
 
 // ========== PRODUCTS API ==========
 
-// Get all states
-app.get('/api/states', (req, res) => {
-    connection.query("SELECT DISTINCT state FROM items WHERE state IS NOT NULL", (err, results) => {
+// Get all categories
+app.get('/api/categories', (req, res) => {
+    connection.query("SELECT id, name, description, image, icon FROM categories ORDER BY id", (err, results) => {
         if (err) {
-            console.error("❌ Error fetching states:", err);
+            console.error("❌ Error fetching categories:", err);
             return res.status(500).json({ error: "Database error" });
         }
-        res.json(results.map(row => ({ name: row.state })));
+        res.json(results);
     });
 });
 
-// Get all item types
-app.get('/api/item-types', (req, res) => {
-    connection.query("SELECT DISTINCT item_type FROM items WHERE item_type IS NOT NULL", (err, results) => {
+// Get products by category
+app.get('/api/categories/:categoryId/products', (req, res) => {
+    const sql = `
+        SELECT id, name, description, cost, original_price, discount, rating, reviews, image, in_stock
+        FROM items 
+        WHERE category_id = ? AND in_stock = TRUE
+        ORDER BY discount DESC, rating DESC
+        LIMIT 50
+    `;
+    connection.query(sql, [req.params.categoryId], (err, results) => {
         if (err) {
-            console.error("❌ Error fetching item types:", err);
+            console.error("❌ Error fetching category products:", err);
             return res.status(500).json({ error: "Database error" });
         }
-        res.json(results.map(row => ({ name: row.item_type })));
+        res.json(results);
     });
 });
 
-// Get products by state and item type
+// Search products
+app.get('/api/search', (req, res) => {
+    const { q } = req.query;
+    if (!q || q.length < 2) {
+        return res.json([]);
+    }
+    
+    const searchTerm = `%${q}%`;
+    const sql = `
+        SELECT id, name, description, cost, original_price, discount, rating, reviews, image, in_stock
+        FROM items 
+        WHERE (name ILIKE ? OR description ILIKE ?) AND in_stock = TRUE
+        ORDER BY rating DESC, reviews DESC
+        LIMIT 30
+    `;
+    connection.query(sql, [searchTerm, searchTerm], (err, results) => {
+        if (err) {
+            console.error("❌ Error searching products:", err);
+            return res.status(500).json({ error: "Database error" });
+        }
+        res.json(results);
+    });
+});
+
+// Get all products (with pagination)
 app.get('/api/items', (req, res) => {
-    const { state, itemType } = req.query;
-    let query = "SELECT id, name, description, cost, image FROM items WHERE 1=1";
-    let params = [];
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
     
-    if (state) {
-        query += " AND state = ?";
-        params.push(state);
-    }
-    if (itemType) {
-        query += " AND item_type = ?";
-        params.push(itemType);
-    }
-    
-    connection.query(query, params, (err, results) => {
+    const sql = `
+        SELECT id, name, description, cost, original_price, discount, rating, reviews, image, in_stock
+        FROM items 
+        WHERE in_stock = TRUE
+        ORDER BY created_at DESC
+        LIMIT ? OFFSET ?
+    `;
+    connection.query(sql, [limit, offset], (err, results) => {
         if (err) {
             console.error("❌ Error fetching items:", err);
             return res.status(500).json({ error: "Database error" });
@@ -92,7 +121,13 @@ app.get('/api/items', (req, res) => {
 
 // Get single product by ID
 app.get('/api/items/:id', (req, res) => {
-    connection.query("SELECT * FROM items WHERE id = ?", [req.params.id], (err, results) => {
+    const sql = `
+        SELECT i.*, c.name as category_name
+        FROM items i
+        LEFT JOIN categories c ON i.category_id = c.id
+        WHERE i.id = ?
+    `;
+    connection.query(sql, [req.params.id], (err, results) => {
         if (err) {
             console.error("❌ Error fetching item:", err);
             return res.status(500).json({ error: "Database error" });
@@ -104,13 +139,37 @@ app.get('/api/items/:id', (req, res) => {
     });
 });
 
-// Get recently added products
-app.get("/api/recent-products", (req, res) => {
-    const sql = "SELECT id, name, image FROM items ORDER BY id DESC LIMIT 6 ";
+// Get trending/featured products
+app.get("/api/trending-products", (req, res) => {
+    const sql = `
+        SELECT id, name, cost, original_price, discount, rating, reviews, image
+        FROM items 
+        WHERE in_stock = TRUE AND reviews > 100
+        ORDER BY rating DESC, reviews DESC
+        LIMIT 12
+    `;
     connection.query(sql, (err, results) => {
         if (err) {
-            console.error("❌ Error fetching recent products:", err);
-            return res.status(500).json({ success: false, message: "Error fetching recent products", error: err });
+            console.error("❌ Error fetching trending products:", err);
+            return res.status(500).json({ success: false, message: "Error fetching trending products", error: err });
+        }
+        res.json(results);
+    });
+});
+
+// Get discount/sale products
+app.get("/api/sale-products", (req, res) => {
+    const sql = `
+        SELECT id, name, cost, original_price, discount, rating, reviews, image
+        FROM items 
+        WHERE in_stock = TRUE AND discount > 30
+        ORDER BY discount DESC
+        LIMIT 15
+    `;
+    connection.query(sql, (err, results) => {
+        if (err) {
+            console.error("❌ Error fetching sale products:", err);
+            return res.status(500).json({ success: false, message: "Error fetching sale products" });
         }
         res.json(results);
     });
