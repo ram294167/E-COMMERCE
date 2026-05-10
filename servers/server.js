@@ -19,6 +19,25 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Import database connection
 const connection = require('./db');
 
+// Helper function to get category icons
+function getCategoryIcon(categoryName) {
+    const icons = {
+        'Fruits': '🍎',
+        'Vegetables': '🥕',
+        'Dairy': '🥛',
+        'Meat': '🥩',
+        'Bakery': '🍞',
+        'Beverages': '🥤',
+        'Snacks': '🍿',
+        'Grains': '🌾',
+        'Spices': '🌶️',
+        'Electronics': '📱',
+        'Clothing': '👕',
+        'Books': '📚'
+    };
+    return icons[categoryName] || '📦';
+}
+
 // Static file serving
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/images', express.static(path.join(__dirname, '..', 'images')));
@@ -46,7 +65,6 @@ app.get('/api/categories', (req, res) => {
     connection.query("SELECT id, name, description, image, icon FROM categories ORDER BY id", (err, results) => {
         if (err) {
             console.error("❌ Error fetching categories:", err.message);
-            // Return empty array if categories table doesn't exist yet
             return res.json([]);
         }
         res.json(results || []);
@@ -55,14 +73,19 @@ app.get('/api/categories', (req, res) => {
 
 // Get products by category
 app.get('/api/categories/:categoryId/products', (req, res) => {
+    const categoryId = parseInt(req.params.categoryId, 10);
+    if (Number.isNaN(categoryId)) {
+        return res.status(400).json({ error: 'Invalid category ID' });
+    }
+
     const sql = `
         SELECT id, name, description, cost, original_price, discount, rating, reviews, image, in_stock
-        FROM items 
+        FROM items
         WHERE category_id = ? AND in_stock = TRUE
         ORDER BY discount DESC, rating DESC
         LIMIT 50
     `;
-    connection.query(sql, [req.params.categoryId], (err, results) => {
+    connection.query(sql, [categoryId], (err, results) => {
         if (err) {
             console.error("❌ Error fetching category products:", err.message);
             const fallbackSql = `
@@ -72,7 +95,7 @@ app.get('/api/categories/:categoryId/products', (req, res) => {
                 ORDER BY id DESC
                 LIMIT 50
             `;
-            connection.query(fallbackSql, [req.params.categoryId], (fallbackErr, fallbackResults) => {
+            connection.query(fallbackSql, [categoryId], (fallbackErr, fallbackResults) => {
                 if (fallbackErr) {
                     return res.status(500).json({ error: "Category not found" });
                 }

@@ -221,7 +221,7 @@ html, body {
   margin-bottom: 1rem;
 }
 
-.category-card .icon {
+..category-card .icon {
   font-size: 2.5rem;
   margin-bottom: 0.5rem;
 }
@@ -230,6 +230,28 @@ html, body {
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-dark);
+}
+
+.products-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.back-button {
+  padding: 0.7rem 1rem;
+  background: #2874f0;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.back-button:hover {
+  background: #1f5ac8;
 }
 
 /* PRODUCTS SECTION */

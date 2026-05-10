@@ -98,6 +98,8 @@ function App() {
     setDisplayProducts(allProducts);
   };
 
+  const selectedCategoryObj = categories.find(category => category.id === selectedCategory);
+
   const handleAddToCart = (product) => {
     const existingItem = cart.find(item => item.id === product.id);
     if (existingItem) {
@@ -242,9 +244,21 @@ function App() {
             {/* Main Products Grid */}
             {(selectedCategory || searchQuery) && (
               <div className="products-section">
-                <h2 className="section-title">
-                  {searchQuery ? `🔍 Search Results for "${searchQuery}"` : '📦 Products'}
-                </h2>
+                <div className="products-header">
+                  <h2 className="section-title">
+                    {searchQuery
+                      ? `🔍 Search Results for "${searchQuery}"`
+                      : selectedCategoryObj
+                        ? `📦 Products in ${selectedCategoryObj.name}`
+                        : '📦 Products'
+                    }
+                  </h2>
+                  {selectedCategory && (
+                    <button className="back-button" onClick={handleShowAll}>
+                      ← Back to categories
+                    </button>
+                  )}
+                </div>
                 {displayProducts.length === 0 ? (
                   <p style={{ textAlign: 'center', padding: '2rem', color: '#878787' }}>
                     No products found. Try searching for something else!
