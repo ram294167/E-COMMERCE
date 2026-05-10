@@ -31,12 +31,17 @@ function formatQuery(query, params = []) {
 
 module.exports = {
     query: (text, params, callback) => {
-        const { text: formattedText, values } = formatQuery(text, params);
+        if (typeof params === 'function') {
+            callback = params;
+            params = [];
+        }
+
+        const { text: formattedText, values } = formatQuery(text, params || []);
         if (typeof callback === 'function') {
-            pool.query(formattedText, values)
-                .then((result) => callback(null, result.rows))
-                .catch(callback);
-            return;
+            return pool.query(formattedText, values, (err, result) => {
+                if (err) return callback(err);
+                callback(null, result.rows);
+            });
         }
 
         return pool.query(formattedText, values).then((result) => result.rows);

@@ -65,7 +65,20 @@ app.get('/api/categories/:categoryId/products', (req, res) => {
     connection.query(sql, [req.params.categoryId], (err, results) => {
         if (err) {
             console.error("❌ Error fetching category products:", err.message);
-            return res.status(500).json({ error: "Category not found" });
+            const fallbackSql = `
+                SELECT id, name, description, cost, image, in_stock
+                FROM items
+                WHERE category_id = ? AND in_stock = TRUE
+                ORDER BY id DESC
+                LIMIT 50
+            `;
+            connection.query(fallbackSql, [req.params.categoryId], (fallbackErr, fallbackResults) => {
+                if (fallbackErr) {
+                    return res.status(500).json({ error: "Category not found" });
+                }
+                res.json(fallbackResults || []);
+            });
+            return;
         }
         res.json(results || []);
     });
@@ -89,7 +102,20 @@ app.get('/api/search', (req, res) => {
     connection.query(sql, [searchTerm, searchTerm], (err, results) => {
         if (err) {
             console.error("❌ Error searching products:", err.message);
-            return res.status(500).json({ error: "Search failed" });
+            const fallbackSql = `
+                SELECT id, name, description, cost, image, in_stock
+                FROM items
+                WHERE (name ILIKE ? OR description ILIKE ?) AND in_stock = TRUE
+                ORDER BY id DESC
+                LIMIT 30
+            `;
+            connection.query(fallbackSql, [searchTerm, searchTerm], (fallbackErr, fallbackResults) => {
+                if (fallbackErr) {
+                    return res.status(500).json({ error: "Search failed" });
+                }
+                res.json(fallbackResults || []);
+            });
+            return;
         }
         res.json(results || []);
     });
