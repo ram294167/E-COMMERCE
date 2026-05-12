@@ -47,17 +47,27 @@ const Cart = ({ cart, onRemove, user, onCheckout }) => {
               </div>
 
               <div className="quantity-control">
-                <button onClick={() => updateQuantity(item.id, quantities[item.id] - 1)}>
-                  −
+                <button
+                  type="button"
+                  className="quantity-btn"
+                  disabled={quantities[item.id] <= 1}
+                  onClick={() => updateQuantity(item.id, quantities[item.id] - 1)}
+                >
+                  ➖
                 </button>
                 <input
                   type="number"
+                  min="1"
                   value={quantities[item.id]}
-                  onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 1)}
-                  style={{ width: '50px', textAlign: 'center', border: '1px solid #ddd', padding: '0.3rem' }}
+                  onChange={(e) => updateQuantity(item.id, parseInt(e.target.value, 10) || 1)}
+                  className="quantity-input"
                 />
-                <button onClick={() => updateQuantity(item.id, quantities[item.id] + 1)}>
-                  +
+                <button
+                  type="button"
+                  className="quantity-btn"
+                  onClick={() => updateQuantity(item.id, quantities[item.id] + 1)}
+                >
+                  ➕
                 </button>
               </div>
 

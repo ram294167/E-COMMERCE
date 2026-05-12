@@ -1,6 +1,6 @@
 # E-Commerce Application
 
-A full-stack e-commerce application built with React, Node.js, Express, and MySQL.
+A full-stack e-commerce application built with React, Node.js, Express, and PostgreSQL.
 
 ## 🎯 Features
 
@@ -47,11 +47,16 @@ E-COMMERCE/
 └── README.md                      # This file
 ```
 
+## 🌐 Live Demo
+
+- Website: https://e-commerce-zvc2-gktx26l0e-ram294167s-projects.vercel.app/
+- Test Login: `test@gmail.com` / `1234`
+
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Node.js 16+
-- MySQL database
+- PostgreSQL database
 - npm or yarn
 
 ### Installation
@@ -74,13 +79,13 @@ cd ..
 # Copy environment file
 cp .env.example .env
 
-# Update .env with your MySQL credentials
+# Update .env with your PostgreSQL credentials
 # DB_HOST=localhost
-# DB_USER=root
+# DB_USER=postgres
 # DB_PASS=your_password
 
 # Create database and tables
-mysql -u root -p < DATABASE_SCHEMA.sql
+psql -U postgres -d ecommerce_db -f DATABASE_SCHEMA_POSTGRES.sql
 ```
 
 3. **Run Application:**
@@ -170,9 +175,9 @@ See `DATABASE_SCHEMA.sql` for complete schema with sample data.
 4. Deploy
 
 ### Database
-- Use cloud MySQL service (PlanetScale, AWS RDS, Aiven)
+- Use cloud PostgreSQL service (Neon, AWS RDS, Aiven)
 - Update DB credentials in environment variables
-- Run `DATABASE_SCHEMA.sql` on cloud database
+- Run `DATABASE_SCHEMA_POSTGRES.sql` on cloud database
 
 See `DEPLOYMENT_GUIDE.md` for detailed instructions.
 
@@ -202,10 +207,10 @@ Database includes 6 sample products:
 PORT=5000
 NODE_ENV=development
 DB_HOST=localhost
-DB_USER=root
+DB_USER=postgres
 DB_PASS=your_password
 DB_NAME=ecommerce_db
-DB_PORT=3306
+DB_PORT=5432
 FRONTEND_URL=http://localhost:5173
 ```
 
@@ -224,7 +229,7 @@ kill -9 <PID>  # Kill it
 ```
 
 **Database connection error:**
-- Verify MySQL is running
+- Verify PostgreSQL is running
 - Check credentials in .env
 - Ensure database exists
 
