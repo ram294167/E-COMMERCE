@@ -25,6 +25,27 @@ html, body {
   color: var(--text-dark);
 }
 
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  min-height: 44px;
+  transition: all 0.2s ease;
+}
+
+button:disabled,
+input[type="button"]:disabled,
+input[type="submit"]:disabled,
+input[type="reset"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
 .app {
   min-height: 100vh;
   display: flex;
@@ -241,11 +262,11 @@ html, body {
 }
 
 .back-button {
-  padding: 0.7rem 1rem;
+  padding: 0.95rem 1rem;
   background: #2874f0;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
 }
@@ -388,8 +409,8 @@ html, body {
   background: var(--primary-color);
   color: var(--white);
   border: none;
-  padding: 0.8rem;
-  border-radius: 4px;
+  padding: 0.95rem 1rem;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
   transition: all 0.3s;
@@ -506,12 +527,12 @@ html, body {
 
 .btn-auth {
   width: 100%;
-  padding: 0.9rem;
+  padding: 0.95rem 1rem;
   background: var(--primary-color);
   color: var(--white);
   border: none;
-  border-radius: 4px;
-  font-size: 1rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
@@ -683,12 +704,12 @@ html, body {
 
 .btn-checkout {
   width: 100%;
-  padding: 1rem;
+  padding: 0.95rem 1rem;
   background: var(--success-color);
   color: var(--white);
   border: none;
-  border-radius: 4px;
-  font-size: 1rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
@@ -805,23 +826,6 @@ html, body {
   font-size: 1.4rem;
   font-weight: 700;
   color: #667eea;
-}
-
-.btn-add-to-cart {
-  flex: 1;
-  background: #667eea;
-  color: white;
-  border: none;
-  padding: 0.7rem;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: all 0.3s;
-  font-weight: 600;
-}
-
-.btn-add-to-cart:hover {
-  background: #764ba2;
-  transform: scale(1.02);
 }
 
 /* Cart */
@@ -1042,7 +1046,7 @@ html, body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.8rem 1rem;
+  padding: 0.95rem 1rem;
   margin-bottom: 1rem;
   background: #2563eb;
   color: white;
@@ -1113,12 +1117,12 @@ html, body {
 /* Buttons */
 .btn-submit, .btn-next, .btn-checkout {
   width: 100%;
-  padding: 0.8rem;
+  padding: 0.95rem 1rem;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 5px;
-  font-size: 1rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
