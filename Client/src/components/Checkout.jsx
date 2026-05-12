@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const Checkout = ({ cart, user, onSuccess }) => {
+const Checkout = ({ cart, user, onSuccess, apiUrl }) => {
   const [step, setStep] = useState(1); // 1: Address, 2: Payment
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [address, setAddress] = useState({
     street: '',
     city: '',
@@ -15,18 +17,59 @@ const Checkout = ({ cart, user, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const API_URL = apiUrl || import.meta.env.VITE_API_URL || 'http://localhost:5000';
   const total = cart.reduce((sum, item) => sum + item.cost * (item.quantity || 1), 0);
 
+  useEffect(() => {
+    if (user?.id) {
+      fetchSavedAddresses();
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (savedAddresses.length > 0 && selectedAddressId === null) {
+      const defaultAddress = savedAddresses.find(addr => addr.is_default) || savedAddresses[0];
+      handleSavedAddressSelect(defaultAddress);
+    }
+  }, [savedAddresses]);
+
+  const fetchSavedAddresses = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/addresses/${user.id}`);
+      setSavedAddresses(response.data || []);
+    } catch (err) {
+      console.error('Failed to load saved addresses:', err);
+    }
+  };
+
   const handleAddressChange = (e) => {
+    setSelectedAddressId(null);
     setAddress({
       ...address,
       [e.target.name]: e.target.value
     });
   };
 
-  const handleProofChange = (e) => {
-    setPaymentProof(e.target.files[0]);
+  const handleSavedAddressSelect = (savedAddress) => {
+    if (savedAddress) {
+      setSelectedAddressId(savedAddress.id);
+      setAddress({
+        street: savedAddress.street,
+        city: savedAddress.city,
+        state: savedAddress.state,
+        postal_code: savedAddress.postal_code,
+        country: savedAddress.country || 'India'
+      });
+    } else {
+      setSelectedAddressId(null);
+      setAddress({
+        street: '',
+        city: '',
+        state: '',
+        postal_code: '',
+        country: 'India'
+      });
+    }
   };
 
   const handleAddressSubmit = async (e) => {
@@ -35,11 +78,23 @@ const Checkout = ({ cart, user, onSuccess }) => {
     setError('');
 
     try {
-      await axios.post(`${API_URL}/api/addresses`, {
+      if (selectedAddressId) {
+        setStep(2);
+        return;
+      }
+
+      const response = await axios.post(`${API_URL}/api/addresses`, {
         user_id: user.id,
         ...address
       });
-      setStep(2);
+
+      if (response.data?.success) {
+        await fetchSavedAddresses();
+        setSelectedAddressId(response.data.addressId);
+        setStep(2);
+      } else {
+        throw new Error('Unable to save address');
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to save address');
     } finally {
@@ -47,13 +102,18 @@ const Checkout = ({ cart, user, onSuccess }) => {
     }
   };
 
+  const handleProofChange = (e) => {
+    setPaymentProof(e.target.files[0]);
+  };
+
   const handlePaymentSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
+    const orderAddress = savedAddresses.find(addr => addr.id === selectedAddressId) || address;
+
     try {
-      // Create order
       const orderResponse = await axios.post(`${API_URL}/api/orders`, {
         user_id: user.id,
         total_amount: total,
@@ -61,12 +121,12 @@ const Checkout = ({ cart, user, onSuccess }) => {
           item_id: item.id,
           quantity: item.quantity || 1,
           cost: item.cost
-        }))
+        })),
+        address: orderAddress
       });
 
       const orderId = orderResponse.data.orderId;
 
-      // Upload payment proof
       if (paymentProof) {
         const formData = new FormData();
         formData.append('proof', paymentProof);
@@ -95,7 +155,40 @@ const Checkout = ({ cart, user, onSuccess }) => {
       {step === 1 && (
         <form onSubmit={handleAddressSubmit} className="checkout-form">
           <h3>Delivery Address</h3>
-          
+
+          {savedAddresses.length > 0 && (
+            <div className="saved-addresses">
+              <h4>Saved delivery addresses</h4>
+              {savedAddresses.map((savedAddress) => (
+                <label key={savedAddress.id} className="saved-address-option">
+                  <input
+                    type="radio"
+                    name="savedAddress"
+                    checked={selectedAddressId === savedAddress.id}
+                    onChange={() => handleSavedAddressSelect(savedAddress)}
+                  />
+                  <div>
+                    <strong>
+                      {savedAddress.street}
+                      {savedAddress.is_default && <span className="default-badge">Default</span>}
+                    </strong>
+                    <p>{savedAddress.city}, {savedAddress.state} {savedAddress.postal_code}</p>
+                    <p>{savedAddress.country}</p>
+                  </div>
+                </label>
+              ))}
+              <label className="saved-address-option new-address-option">
+                <input
+                  type="radio"
+                  name="savedAddress"
+                  checked={selectedAddressId === null}
+                  onChange={() => handleSavedAddressSelect(null)}
+                />
+                <span>Add a new address</span>
+              </label>
+            </div>
+          )}
+
           <div className="form-group">
             <label>Street Address</label>
             <input
@@ -160,7 +253,7 @@ const Checkout = ({ cart, user, onSuccess }) => {
           {error && <div className="error-message">{error}</div>}
 
           <button type="submit" className="btn-next" disabled={loading}>
-            {loading ? 'Saving...' : 'Continue to Payment'}
+            {selectedAddressId ? (loading ? 'Loading...' : 'Use selected address') : (loading ? 'Saving...' : 'Continue to Payment')}
           </button>
         </form>
       )}

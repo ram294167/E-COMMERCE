@@ -373,10 +373,15 @@ app.post('/api/orders', (req, res) => {
     if (!user_id || !total_amount || !items || items.length === 0) {
         return res.status(400).json({ error: "Missing required fields" });
     }
+
+    const deliveryAddress = address
+        ? (typeof address === 'string'
+            ? address
+            : `${address.street || ''}, ${address.city || ''}, ${address.state || ''}, ${address.postal_code || ''}`)
+        : null;
     
-    // Insert order
-    const orderSql = "INSERT INTO orders (user_id, total_amount, status) VALUES (?, ?, 'pending') RETURNING id";
-    connection.query(orderSql, [user_id, total_amount], (err, orderResult) => {
+    const orderSql = "INSERT INTO orders (user_id, total_amount, status, delivery_address) VALUES (?, ?, 'pending', ?) RETURNING id";
+    connection.query(orderSql, [user_id, total_amount, deliveryAddress], (err, orderResult) => {
         if (err) {
             console.error("❌ Error creating order:", err);
             return res.status(500).json({ error: "Database error" });
@@ -384,7 +389,6 @@ app.post('/api/orders', (req, res) => {
         
         const orderId = orderResult[0].id;
         
-        // Insert order items
         const itemSql = `INSERT INTO order_items (order_id, item_id, quantity, price) VALUES ${items.map(() => "(?, ?, ?, ?)").join(', ')}`;
         const itemValues = items.flatMap(item => [orderId, item.item_id, item.quantity, item.cost]);
         
@@ -394,7 +398,6 @@ app.post('/api/orders', (req, res) => {
                 return res.status(500).json({ error: "Database error" });
             }
             
-            // Clear cart
             connection.query("DELETE FROM cart WHERE user_id = ?", [user_id], (err) => {
                 res.json({
                     success: true,
@@ -539,27 +542,66 @@ app.post('/api/payment', upload.single('proof'), (req, res) => {
 
 // Add address
 app.post('/api/addresses', (req, res) => {
-    const { user_id, street, city, state, postal_code, country } = req.body;
-    
-    const sql = "INSERT INTO addresses (user_id, street, city, state, postal_code, country) VALUES (?, ?, ?, ?, ?, ?) RETURNING id";
-    connection.query(sql, [user_id, street, city, state, postal_code, country || 'India'], (err, result) => {
-        if (err) {
-            console.error("❌ Error adding address:", err);
-            return res.status(500).json({ error: "Database error" });
+    const { user_id, street, city, state, postal_code, country, is_default } = req.body;
+
+    if (!user_id || !street || !city || !state || !postal_code) {
+        return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const shouldDefault = Boolean(is_default);
+
+    const insertAddress = (defaultFlag) => {
+        const sql = "INSERT INTO addresses (user_id, street, city, state, postal_code, country, is_default) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id";
+        connection.query(
+            sql,
+            [user_id, street, city, state, postal_code, country || 'India', defaultFlag ? 1 : 0],
+            (err, result) => {
+                if (err) {
+                    console.error("❌ Error adding address:", err);
+                    return res.status(500).json({ error: "Database error" });
+                }
+                res.json({ success: true, message: "Address added!", addressId: result[0].id });
+            }
+        );
+    };
+
+    const saveAddress = () => {
+        if (shouldDefault) {
+            connection.query("UPDATE addresses SET is_default = FALSE WHERE user_id = ?", [user_id], (err) => {
+                if (err) {
+                    console.error("❌ Error clearing default addresses:", err);
+                    return res.status(500).json({ error: "Database error" });
+                }
+                insertAddress(true);
+            });
+        } else {
+            connection.query("SELECT COUNT(*) AS count FROM addresses WHERE user_id = ?", [user_id], (err, result) => {
+                if (err) {
+                    console.error("❌ Error checking existing addresses:", err);
+                    return res.status(500).json({ error: "Database error" });
+                }
+                const addressCount = result[0]?.count || 0;
+                insertAddress(addressCount === 0);
+            });
         }
-        res.json({ success: true, message: "Address added!", addressId: result[0].id });
-    });
+    };
+
+    saveAddress();
 });
 
 // Get user addresses
 app.get('/api/addresses/:userId', (req, res) => {
-    connection.query("SELECT * FROM addresses WHERE user_id = ?", [req.params.userId], (err, results) => {
-        if (err) {
-            console.error("❌ Error fetching addresses:", err);
-            return res.status(500).json({ error: "Database error" });
+    connection.query(
+        "SELECT * FROM addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC",
+        [req.params.userId],
+        (err, results) => {
+            if (err) {
+                console.error("❌ Error fetching addresses:", err);
+                return res.status(500).json({ error: "Database error" });
+            }
+            res.json(results);
         }
-        res.json(results);
-    });
+    );
 });
 
 // ========== ERROR HANDLING ==========

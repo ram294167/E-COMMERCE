@@ -984,6 +984,67 @@ html, body {
   border-left: 4px solid #c33;
 }
 
+.saved-addresses {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.saved-addresses h4 {
+  margin-bottom: 0.75rem;
+  color: #334155;
+}
+
+.saved-address-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.8rem;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+}
+
+.saved-address-option input {
+  margin-top: 0.35rem;
+}
+
+.saved-address-option strong {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.default-badge {
+  background: #10b981;
+  color: white;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.saved-address-option div,
+.saved-address-option span {
+  color: #475569;
+}
+
+.saved-address-option strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #0f172a;
+}
+
+.new-address-option {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
 /* Buttons */
 .btn-submit, .btn-next, .btn-checkout {
   width: 100%;
