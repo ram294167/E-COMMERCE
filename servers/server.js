@@ -367,11 +367,24 @@ app.delete('/api/cart/:cartId', (req, res) => {
 // ========== ORDERS API ==========
 
 // Create order
-app.post('/api/orders', (req, res) => {
+app.post('/api/orders', async (req, res) => {
     const { user_id, total_amount, items, address } = req.body;
-    
-    if (!user_id || !total_amount || !items || items.length === 0) {
+
+    if (!user_id || !total_amount || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const sanitizedItems = items.map((item, index) => ({
+        item_id: Number(item.item_id),
+        quantity: Number(item.quantity),
+        price: Number(item.cost)
+    }));
+
+    for (let i = 0; i < sanitizedItems.length; i += 1) {
+        const item = sanitizedItems[i];
+        if (!item.item_id || !item.quantity || !Number.isFinite(item.price)) {
+            return res.status(400).json({ error: `Invalid order item at index ${i}` });
+        }
     }
 
     const deliveryAddress = address
@@ -379,34 +392,31 @@ app.post('/api/orders', (req, res) => {
             ? address
             : `${address.street || ''}, ${address.city || ''}, ${address.state || ''}, ${address.postal_code || ''}`)
         : null;
-    
-    const orderSql = "INSERT INTO orders (user_id, total_amount, status, delivery_address) VALUES (?, ?, 'pending', ?) RETURNING id";
-    connection.query(orderSql, [user_id, total_amount, deliveryAddress], (err, orderResult) => {
-        if (err) {
-            console.error("❌ Error creating order:", err);
-            return res.status(500).json({ error: "Database error" });
+
+    try {
+        const orderSql = "INSERT INTO orders (user_id, total_amount, status, delivery_address) VALUES (?, ?, 'pending', ?) RETURNING id";
+        const orderResult = await connection.query(orderSql, [user_id, total_amount, deliveryAddress]);
+        const orderId = orderResult?.[0]?.id;
+
+        if (!orderId) {
+            throw new Error('Failed to create order record');
         }
-        
-        const orderId = orderResult[0].id;
-        
-        const itemSql = `INSERT INTO order_items (order_id, item_id, quantity, price) VALUES ${items.map(() => "(?, ?, ?, ?)").join(', ')}`;
-        const itemValues = items.flatMap(item => [orderId, item.item_id, item.quantity, item.cost]);
-        
-        connection.query(itemSql, itemValues, (err) => {
-            if (err) {
-                console.error("❌ Error inserting order items:", err);
-                return res.status(500).json({ error: "Database error" });
-            }
-            
-            connection.query("DELETE FROM cart WHERE user_id = ?", [user_id], (err) => {
-                res.json({
-                    success: true,
-                    message: "Order created successfully!",
-                    orderId: orderId
-                });
-            });
+
+        const itemSql = `INSERT INTO order_items (order_id, item_id, quantity, price) VALUES ${sanitizedItems.map(() => "(?, ?, ?, ?)").join(', ')}`;
+        const itemValues = sanitizedItems.flatMap(item => [orderId, item.item_id, item.quantity, item.price]);
+
+        await connection.query(itemSql, itemValues);
+        await connection.query("DELETE FROM cart WHERE user_id = ?", [user_id]);
+
+        return res.json({
+            success: true,
+            message: "Order created successfully!",
+            orderId: orderId
         });
-    });
+    } catch (err) {
+        console.error("❌ Order creation failed:", err.message || err);
+        return res.status(500).json({ error: "Database error", details: process.env.NODE_ENV === 'development' ? err.message : undefined });
+    }
 });
 
 // Get user orders
