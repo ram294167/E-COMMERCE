@@ -19,6 +19,15 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Import database connection
 const connection = require('./db');
 
+// Ensure orders table has delivery_address column in Postgres
+connection.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_address TEXT", (err) => {
+    if (err) {
+        console.error('❌ Failed to ensure delivery_address column exists:', err.message || err);
+    } else {
+        console.log('✅ delivery_address column is available in orders table');
+    }
+});
+
 // Helper function to get category icons
 function getCategoryIcon(categoryName) {
     const icons = {
