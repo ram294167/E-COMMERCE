@@ -427,6 +427,92 @@ app.get('/api/orders/:userId', (req, res) => {
     });
 });
 
+// Get detailed user orders with items and payment status
+app.get('/api/user-orders/:userId', (req, res) => {
+    const userId = req.params.userId;
+    
+    const sql = `
+        SELECT 
+            o.id, 
+            o.order_date, 
+            o.total_amount, 
+            o.status,
+            o.delivery_address,
+            COALESCE(a.street || ', ' || a.city || ', ' || a.state || ', ' || a.postal_code, o.delivery_address) AS full_address,
+            COALESCE(p.status, 'pending') AS payment_status,
+            json_agg(
+                json_build_object(
+                    'id', oi.id,
+                    'item_id', oi.item_id,
+                    'name', i.name,
+                    'quantity', oi.quantity,
+                    'price', oi.price,
+                    'image', i.image
+                )
+            ) AS items
+        FROM orders o
+        LEFT JOIN order_items oi ON o.id = oi.order_id
+        LEFT JOIN items i ON oi.item_id = i.id
+        LEFT JOIN addresses a ON o.user_id = a.user_id AND a.is_default = TRUE
+        LEFT JOIN payments p ON o.id = p.order_id
+        WHERE o.user_id = ?
+        GROUP BY o.id, o.order_date, o.total_amount, o.status, o.delivery_address, a.street, a.city, a.state, a.postal_code, p.status
+        ORDER BY o.order_date DESC
+    `;
+    
+    connection.query(sql, [userId], (err, results) => {
+        if (err) {
+            console.error("❌ Error fetching detailed orders:", err.message);
+            // Fallback to simpler query
+            const fallbackSql = `
+                SELECT 
+                    o.id, 
+                    o.order_date, 
+                    o.total_amount, 
+                    o.status,
+                    o.delivery_address,
+                    'pending' AS payment_status
+                FROM orders o
+                WHERE o.user_id = ?
+                ORDER BY o.order_date DESC
+            `;
+            
+            connection.query(fallbackSql, [userId], (fallbackErr, fallbackResults) => {
+                if (fallbackErr) {
+                    return res.status(500).json({ error: "Database error" });
+                }
+                
+                // Fetch items for each order separately
+                if (fallbackResults.length === 0) {
+                    return res.json([]);
+                }
+                
+                let processedOrders = 0;
+                fallbackResults.forEach(order => {
+                    const itemsSql = `
+                        SELECT oi.id, oi.item_id, i.name, oi.quantity, oi.price, i.image
+                        FROM order_items oi
+                        JOIN items i ON oi.item_id = i.id
+                        WHERE oi.order_id = ?
+                    `;
+                    
+                    connection.query(itemsSql, [order.id], (itemErr, items) => {
+                        order.items = items || [];
+                        processedOrders++;
+                        
+                        if (processedOrders === fallbackResults.length) {
+                            res.json(fallbackResults);
+                        }
+                    });
+                });
+            });
+            return;
+        }
+        
+        res.json(results);
+    });
+});
+
 // ========== PAYMENT API ==========
 
 // Upload payment proof

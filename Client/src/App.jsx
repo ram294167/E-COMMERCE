@@ -5,6 +5,7 @@ import ProductCard from './components/ProductCard';
 import Cart from './components/Cart';
 import Auth from './components/Auth';
 import Checkout from './components/Checkout';
+import OrderTracking from './components/OrderTracking';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
@@ -133,7 +134,7 @@ function App() {
       <header className="header">
         <div className="header-content">
           <h1 onClick={() => { setCurrentPage('home'); handleShowAll(); }} style={{ cursor: 'pointer' }}>
-            🛍️ FlipCart
+            🛍️ ShopHub
           </h1>
 
           <div className="search-bar">
@@ -161,6 +162,15 @@ function App() {
               {cart.length > 0 && <span className="cart-badge">{cart.length}</span>}
             </button>
 
+            {user && (
+              <button 
+                onClick={() => setCurrentPage('orders')}
+                className={currentPage === 'orders' ? 'active' : ''}
+              >
+                📦 Orders
+              </button>
+            )}
+
             {user ? (
               <div className="user-info">
                 <span className="user-name">👤 {user.name}</span>
@@ -183,12 +193,6 @@ function App() {
 
         {currentPage === 'home' && !loading && (
           <div className="home">
-            {/* Banner */}
-            <div className="banner">
-              <h2>🎉 Welcome to FlipCart</h2>
-              <p>Discover amazing products at unbeatable prices!</p>
-            </div>
-
             {/* Categories Section */}
             {!selectedCategory && !searchQuery && (
               <div className="categories-section">
@@ -339,10 +343,14 @@ function App() {
         {currentPage === 'auth' && !user && !loading && (
           <Auth onLogin={handleLogin} apiUrl={API_URL} />
         )}
+
+        {currentPage === 'orders' && user && !loading && (
+          <OrderTracking user={user} />
+        )}
       </main>
 
       <footer style={{ background: '#2874f0', color: 'white', textAlign: 'center', padding: '2rem', marginTop: '2rem' }}>
-        <p>&copy; 2024 FlipCart. All rights reserved. | Your trusted online shopping destination</p>
+        <p>&copy; 2024 ShopHub. All rights reserved. | Your trusted online shopping destination</p>
       </footer>
     </div>
   );
