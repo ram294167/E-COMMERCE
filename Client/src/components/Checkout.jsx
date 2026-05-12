@@ -15,6 +15,8 @@ const Checkout = ({ cart, user, onSuccess, apiUrl }) => {
   const [paymentMethod, setPaymentMethod] = useState('bank_transfer');
   const [paymentProof, setPaymentProof] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [location, setLocation] = useState(null);
   const [error, setError] = useState('');
 
   const API_URL = apiUrl || import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -39,6 +41,61 @@ const Checkout = ({ cart, user, onSuccess, apiUrl }) => {
       setSavedAddresses(response.data || []);
     } catch (err) {
       console.error('Failed to load saved addresses:', err);
+    }
+  };
+
+  const getCurrentPosition = () => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation is not supported by your browser.'));
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 });
+    });
+  };
+
+  const handleUseCurrentLocation = async () => {
+    setGeoLoading(true);
+    setError('');
+
+    try {
+      const position = await getCurrentPosition();
+      const { latitude, longitude } = position.coords;
+      setLocation({
+        latitude,
+        longitude,
+        mapUrl: `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
+      });
+      setSelectedAddressId(null);
+
+      try {
+        const response = await axios.get('https://nominatim.openstreetmap.org/reverse', {
+          params: {
+            format: 'json',
+            lat: latitude,
+            lon: longitude
+          }
+        });
+
+        const geoAddress = response.data.address || {};
+        setAddress({
+          street: [geoAddress.house_number, geoAddress.road].filter(Boolean).join(' ') || response.data.display_name || '',
+          city: geoAddress.city || geoAddress.town || geoAddress.village || '',
+          state: geoAddress.state || geoAddress.county || '',
+          postal_code: geoAddress.postcode || '',
+          country: geoAddress.country || 'India'
+        });
+      } catch (reverseErr) {
+        setError('Location found, but address lookup failed. Please complete the details manually.');
+        setAddress(prev => ({
+          ...prev,
+          street: `Latitude ${latitude.toFixed(6)}, Longitude ${longitude.toFixed(6)}`
+        }));
+      }
+    } catch (err) {
+      setError(err.message || 'Unable to detect location. Please allow location access.');
+    } finally {
+      setGeoLoading(false);
     }
   };
 
@@ -155,6 +212,23 @@ const Checkout = ({ cart, user, onSuccess, apiUrl }) => {
       {step === 1 && (
         <form onSubmit={handleAddressSubmit} className="checkout-form">
           <h3>Delivery Address</h3>
+
+          <button
+            type="button"
+            className="btn-geo"
+            onClick={handleUseCurrentLocation}
+            disabled={geoLoading}
+          >
+            {geoLoading ? 'Detecting current location...' : 'Use current location'}
+          </button>
+
+          {location && (
+            <div className="geo-info">
+              <p>
+                Current location detected. <a href={location.mapUrl} target="_blank" rel="noreferrer">Open on map</a>
+              </p>
+            </div>
+          )}
 
           {savedAddresses.length > 0 && (
             <div className="saved-addresses">

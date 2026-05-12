@@ -1013,6 +1013,46 @@ html, body {
   margin-top: 0.35rem;
 }
 
+.btn-geo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.8rem 1rem;
+  margin-bottom: 1rem;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.btn-geo:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.btn-geo:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.geo-info {
+  margin-bottom: 1rem;
+  padding: 0.9rem 1rem;
+  background: #ecfdf5;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  color: #166534;
+}
+
+.geo-info a {
+  color: #166534;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
 .saved-address-option strong {
   display: flex;
   align-items: center;
