@@ -217,7 +217,7 @@ function App() {
             {!selectedCategory && !searchQuery && trendingProducts.length > 0 && (
               <div className="products-section">
                 <h2 className="section-title">⭐ Trending Now</h2>
-                <div className="products-grid">
+                <div className="products-grid products-grid-horizontal">
                   {trendingProducts.slice(0, 8).map(product => (
                     <ProductCard
                       key={product.id}
@@ -233,7 +233,7 @@ function App() {
             {!selectedCategory && !searchQuery && saleProducts.length > 0 && (
               <div className="products-section">
                 <h2 className="section-title">🔥 Great Deals & Offers</h2>
-                <div className="products-grid">
+                <div className="products-grid products-grid-horizontal">
                   {saleProducts.slice(0, 8).map(product => (
                     <ProductCard
                       key={product.id}
